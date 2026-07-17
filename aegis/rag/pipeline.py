@@ -131,7 +131,9 @@ def retrieve(query: str, top_k: int = TOP_K_RETRIEVE) -> List[Dict]:
         .to_list()
     )
 
-    return results
+    SIMILARITY_THRESHOLD = 0.5
+    filtered = [r for r in results if r.get("_distance", 1.0) < SIMILARITY_THRESHOLD]
+    return filtered
 
 
 # ── RAG Answer Generation ──────────────────────────────────────────────────────
@@ -154,8 +156,21 @@ def answer(query: str, store: MemoryStore) -> Dict:
     # Step 2: Keyword fallback if vector search returns nothing
     keyword_results = []
     if not vector_results:
-        keyword_results = store.keyword_search(query, limit=TOP_K_RETRIEVE)
-
+        try:
+            keyword_results = store.keyword_search(query, limit=TOP_K_RETRIEVE)
+        except Exception as e:
+            print(f"[answer] keyword fallback failed: {e}")
+            keyword_results = []
+   
+    # If BOTH retrieval methods found nothing relevant — say so immediately
+    # Do NOT call the LLM with empty or irrelevant context
+    if not vector_results and not keyword_results:
+        return {
+            "answer": "I don't have that information in my memory yet. "
+                      "Please add a note about it using the 'Add Memory' tab.",
+            "sources": [],
+            "retrieved_chunks": [],
+        }
     # Step 3: Assemble context from retrieved chunks
     context_parts = []
     sources = []
@@ -163,7 +178,7 @@ def answer(query: str, store: MemoryStore) -> Dict:
     for i, chunk in enumerate(vector_results):
         context_parts.append(
             f"[Source {i+1}: {chunk['title']} ({chunk['kind']})]"
-            f"\n{chunk['chunk_text']}"
+            f"\n{chunk['chunk_text'][:200]}"
         )
         sources.append(
             {

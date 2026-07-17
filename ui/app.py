@@ -85,6 +85,17 @@ def get_store():
     return MemoryStore()
 
 store = get_store()
+# ── Auto-rebuild index on startup if records exist ──────────────
+@st.cache_resource
+def ensure_index_built():
+    from aegis.rag.pipeline import build_index, get_vector_db
+    db = get_vector_db()
+    if "memory_chunks" not in db.table_names() and store.count() > 0:
+        print("Index missing — rebuilding on startup...")
+        build_index(store)
+    return True
+
+ensure_index_built()
 
 
 # ── Sidebar — System Status ────────────────────────────────────────────────────

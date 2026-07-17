@@ -111,21 +111,55 @@ class MemoryStore:
     def keyword_search(self, query: str, limit: int = 10) -> List[Dict]:
         """
         BM25 full-text keyword search using SQLite FTS5.
-        Finds records containing query words.
+        Sanitizes input to remove characters that break FTS5 syntax.
         """
-        with self._conn() as conn:
-            rows = conn.execute(
-                """
-                SELECT m.*, rank
-                FROM memory_fts
-                JOIN memory_records m ON memory_fts.rowid = m.rowid
-                WHERE memory_fts MATCH ?
-                ORDER BY rank
-                LIMIT ?
-                """,
-                (query, limit),
-            ).fetchall()
-        return [dict(r) for r in rows]
+
+        # ── Sanitize the query ─────────────────────────────────────────
+        # FTS5 special characters that cause syntax errors:
+        # ? * " ( ) - ^ : NOT AND OR
+        # Strategy: strip punctuation, keep only plain words
+
+        import re
+
+        # Remove all non-alphanumeric characters except spaces
+        clean = re.sub(r"[^\w\s]", " ", query)
+
+        # Collapse multiple spaces
+        clean = re.sub(r"\s+", " ", clean).strip()
+
+        # Extract individual words
+        words = clean.split()
+
+        # If nothing usable remains after cleaning — return empty
+        if not words:
+            return []
+
+        # Build FTS5 query — each word searched independently with OR
+        # "meeting OR deadline OR tasks" style
+        # More forgiving than exact phrase match
+        fts_query = " OR ".join(words)
+
+        # ── Run the search ─────────────────────────────────────────────
+        try:
+            with self._conn() as conn:
+                rows = conn.execute(
+                    """
+                    SELECT m.*, rank
+                    FROM memory_fts
+                    JOIN memory_records m ON memory_fts.rowid = m.rowid
+                    WHERE memory_fts MATCH ?
+                    ORDER BY rank
+                    LIMIT ?
+                    """,
+                    (fts_query, limit),
+                ).fetchall()
+            return [dict(r) for r in rows]
+
+        except Exception as e:
+            # If FTS still fails for any reason — fail silently
+            # RAG will still work via vector search
+            print(f"[keyword_search] FTS5 error ignored: {e}")
+            return []
 
     def count(self) -> int:
         """Return total number of memory records."""

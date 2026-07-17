@@ -76,6 +76,7 @@ def ask_llm(prompt: str, model: Optional[str] = None) -> str:
                 "options": {
                     "temperature": LLM_TEMPERATURE,
                     "num_predict": LLM_MAX_TOKENS,
+                    "num_ctx": 2048,
                 },
             },
             timeout=120,  # Local inference can take time on CPU
@@ -86,4 +87,9 @@ def ask_llm(prompt: str, model: Optional[str] = None) -> str:
     except requests.Timeout:
         return "⚠️ LLM timed out. The model may still be loading — please try again."
     except Exception as e:
+        # temporary debug — remove after fixing
+        import traceback
+        traceback.print_exc()
+        if hasattr(e, 'response') and e.response is not None:
+            print("Ollama response body:", e.response.text)
         return f"⚠️ LLM error: {str(e)}"

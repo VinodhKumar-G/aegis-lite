@@ -1,0 +1,69 @@
+name: AEGIS Lite — Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Verify memory store
+        run: |
+          python -c "
+          from aegis.memory.store import MemoryStore
+          s = MemoryStore()
+          rid = s.add('CI test record', kind='note', title='CI Test')
+          assert s.count() == 1, 'Record not added'
+          r = s.get(rid)
+          assert r['title'] == 'CI Test', 'Record not retrieved'
+          s.delete(rid)
+          assert s.count() == 0, 'Record not deleted'
+          print('Memory store OK')
+          "
+
+      - name: Verify embedding engine
+        run: |
+          python -c "
+          from aegis.embeddings.engine import embed_query, embed_texts
+          v = embed_query('what are my deadlines')
+          assert len(v) == 384, f'Expected 384 dims, got {len(v)}'
+          vecs = embed_texts(['test one', 'test two'])
+          assert len(vecs) == 2, 'Batch embed failed'
+          print('Embedding engine OK')
+          "
+
+      - name: Verify ingest pipeline
+        run: |
+          python -c "
+          from aegis.memory.store import MemoryStore
+          from aegis.ingest.pipeline import ingest_text
+          store = MemoryStore()
+          result = ingest_text(
+              'Deadline on July 17 at JCER Belagavi',
+              kind='deadline',
+              title='Test Deadline',
+              store=store,
+              rebuild_index=False,
+          )
+          assert result['success'] == True, 'Ingest failed'
+          assert store.count() == 1, 'Record not in store'
+          print('Ingest pipeline OK')
+          "

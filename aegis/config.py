@@ -18,7 +18,8 @@ VECTOR_DIR  = DATA_DIR / "vectors"
 OLLAMA_MODEL    = os.getenv("AEGIS_MODEL", "phi3:mini")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_URL",  "http://localhost:11434")
 LLM_TEMPERATURE = 0.1     # Low = factual, grounded answers
-LLM_MAX_TOKENS  = 512
+LLM_MAX_TOKENS  = 150
+LLM_NUM_CTX = 512   # add this new line
 
 # ── Embeddings ────────────────────────────────────────────────────────────────
 # BGE-small: 380 MB, 384 dimensions, runs fast on CPU

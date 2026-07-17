@@ -76,7 +76,7 @@ def ask_llm(prompt: str, model: Optional[str] = None) -> str:
                 "options": {
                     "temperature": LLM_TEMPERATURE,
                     "num_predict": LLM_MAX_TOKENS,
-                    "num_ctx": 2048,
+                    "num_ctx": 512,
                 },
             },
             timeout=300,  # Local inference can take time on CPU

@@ -153,9 +153,15 @@ def answer(query: str, store: MemoryStore) -> Dict:
     Returns:
         Dict with 'answer', 'sources', 'retrieved_chunks'
     """
+    if not query or not query.strip():
+        return {
+            "answer": "Please type a question.",
+            "sources": [],
+            "retrieved_chunks": [],
+        }
 
     # Step 1: Semantic retrieval from vector DB
-    vector_results = retrieve(query, top_k=2)
+    vector_results = retrieve(query, top_k=1)
 
     # Step 2: Keyword fallback if vector search returns nothing
     keyword_results = []
@@ -184,7 +190,7 @@ def answer(query: str, store: MemoryStore) -> Dict:
         # Strip the [KIND] prefix that gets added during indexing
         clean_text = re.sub(r'^\[.*?\]\s*\S+\s*', '', chunk['chunk_text']).strip()
         context_parts.append(
-            f"- {chunk['title']}: {clean_text[:150]}"
+            f"- {chunk['title']}: {clean_text[:80]}"
         )
         sources.append(
             {
@@ -221,20 +227,19 @@ def answer(query: str, store: MemoryStore) -> Dict:
 
     context_text = "\n".join(context_parts)
 
-    prompt = f"""<|user|>
-You are a personal memory assistant called AEGIS.
-You must answer using ONLY the notes below.
-If the notes do not contain the answer, respond with:
-"I don't have that in my memory."
-Do not add any other explanation.
-Do not say Sure or Here is your answer.
-Start your response directly with the answer.
+    prompt = f"""You are AEGIS, a personal memory assistant.
+You ONLY answer from the notes provided below.
+You do NOT use your own training knowledge.
+You do NOT answer general questions.
+If the answer is not in the notes below, you must say exactly:
+"I don't have that in my memory. Please add a note about it."
+Nothing else.
 
 Notes:
 {context_text}
 
-Question: {query}<|end|>
-<|assistant|>"""
+Question: {query}
+Answer (from notes only):"""
 
     # Step 5: Get answer from local LLM
     llm_answer = ask_llm(prompt)

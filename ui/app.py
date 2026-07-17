@@ -202,36 +202,36 @@ with tab_ask:
     with col1:
         ask_btn = st.button("Ask →", type="primary", use_container_width=True)
 
-    if ask_btn and query:
-        if count == 0:
+    if ask_btn:
+        query = query.strip()
+        if not query:
+            st.warning("Please type a question first.")
+        elif count == 0:
             st.warning(
-                "⚠️ Your memory is empty. "
-                "Go to the **Add Memory** tab and add some notes first."
+                "Your memory is empty. "
+                "Go to Add Memory tab and add some notes first."
             )
         else:
-            with st.spinner("🧠 Searching your memory and generating answer..."):
+            with st.spinner("Searching your memory..."):
                 start = time.time()
                 result = answer(query, store)
                 elapsed = time.time() - start
 
-            # Show answer
             st.markdown("#### Answer")
             st.markdown(
                 f'<div class="answer-box">{result["answer"]}</div>',
                 unsafe_allow_html=True,
             )
+            st.caption(
+                f"Generated in {elapsed:.1f}s · "
+                f"Processed entirely on this device"
+            )
 
-            # Performance note
-            st.caption(f"⏱️ Generated in {elapsed:.1f}s · Processed entirely on this device")
-
-            # Show sources
             if result["sources"]:
                 st.markdown("#### Sources Retrieved from Your Memory")
                 for i, src in enumerate(result["sources"], 1):
                     import re
-                    # Strip [KIND] prefix from chunk preview
                     clean_chunk = re.sub(r'^\[.*?\]\s*', '', src["chunk"])
-
                     st.markdown(
                         f'<div class="source-card">'
                         f'<strong>Source {i}: {src["title"]}</strong> '
@@ -241,8 +241,10 @@ with tab_ask:
                         unsafe_allow_html=True,
                     )
             else:
-                st.info("No matching memories found. Add more records and rebuild the index.")
-
+                st.info(
+                    "No matching memories found. "
+                    "Add more records and try again."
+                )
     elif ask_btn and not query:
         st.warning("Please enter a question.")
 

@@ -180,9 +180,9 @@ def answer(query: str, store: MemoryStore) -> Dict:
     sources = []
 
     for i, chunk in enumerate(vector_results):
+        # Cleaner format — easier for small models to follow
         context_parts.append(
-            f"[Source {i+1}: {chunk['title']} ({chunk['kind']})]"
-            f"\n{chunk['chunk_text'][:120]}"
+            f"- {chunk['title']}: {chunk['chunk_text'][:120]}"
         )
         sources.append(
             {
@@ -217,20 +217,24 @@ def answer(query: str, store: MemoryStore) -> Dict:
             "retrieved_chunks": [],
         }
 
-    context_text = "\n\n---\n\n".join(context_parts)
+    context_text = "\n".join(context_parts)
 
-    prompt = f"""You are AEGIS Lite, a private personal AI assistant.
-You only answer from the personal memory provided below.
-If the memory does not contain the answer, say "I don't have that information in my memory."
-Never make up information. Always be specific and cite which source you used.
+    prompt = f"""### Instruction:
+You are AEGIS, a private personal AI assistant.
+Rules you must follow:
+- Answer ONLY using the sources provided below.
+- If the answer is not in the sources, respond with exactly: I don't have that information in my memory.
+- Never repeat the sources back to the user.
+- Never make up information.
+- Give a short, direct answer in 2-3 sentences maximum.
 
-=== PERSONAL MEMORY ===
+### Sources:
 {context_text}
-=== END OF MEMORY ===
 
-Question: {query}
+### Question:
+{query}
 
-Answer (be concise, cite sources by their title):"""
+### Answer:"""
 
     # Step 5: Get answer from local LLM
     llm_answer = ask_llm(prompt)

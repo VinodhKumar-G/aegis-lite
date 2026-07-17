@@ -15,7 +15,7 @@ VECTOR_DIR  = DATA_DIR / "vectors"
 # ── LLM (via Ollama) ──────────────────────────────────────────────────────────
 # phi3:mini  → ~2.3 GB  → fast in Codespaces (recommended for demo)
 # llama3:8b  → ~4.7 GB  → better quality (use if machine has ≥16 GB RAM)
-OLLAMA_MODEL    = os.getenv("AEGIS_MODEL", "phi3:mini")
+OLLAMA_MODEL    = os.getenv("AEGIS_MODEL", "tinyllama")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_URL",  "http://localhost:11434")
 LLM_TEMPERATURE = 0.1     # Low = factual, grounded answers
 LLM_MAX_TOKENS  = 512

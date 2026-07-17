@@ -131,8 +131,12 @@ def retrieve(query: str, top_k: int = TOP_K_RETRIEVE) -> List[Dict]:
         .to_list()
     )
 
-    SIMILARITY_THRESHOLD = 0.5
+    SIMILARITY_THRESHOLD = 1.2
     filtered = [r for r in results if r.get("_distance", 1.0) < SIMILARITY_THRESHOLD]
+    # Debug — remove after confirming it works
+    for r in filtered:
+        print(f"[retrieve] {r['title']} | distance: {r.get('_distance', 'N/A'):.4f}")
+
     return filtered
 
 
@@ -151,7 +155,7 @@ def answer(query: str, store: MemoryStore) -> Dict:
     """
 
     # Step 1: Semantic retrieval from vector DB
-    vector_results = retrieve(query, top_k=TOP_K_RETRIEVE)
+    vector_results = retrieve(query, top_k=2)
 
     # Step 2: Keyword fallback if vector search returns nothing
     keyword_results = []
@@ -178,7 +182,7 @@ def answer(query: str, store: MemoryStore) -> Dict:
     for i, chunk in enumerate(vector_results):
         context_parts.append(
             f"[Source {i+1}: {chunk['title']} ({chunk['kind']})]"
-            f"\n{chunk['chunk_text'][:200]}"
+            f"\n{chunk['chunk_text'][:120]}"
         )
         sources.append(
             {

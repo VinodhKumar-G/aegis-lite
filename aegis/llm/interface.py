@@ -79,7 +79,7 @@ def ask_llm(prompt: str, model: Optional[str] = None) -> str:
                     "num_ctx": 2048,
                 },
             },
-            timeout=120,  # Local inference can take time on CPU
+            timeout=300,  # Local inference can take time on CPU
         )
         response.raise_for_status()
         return response.json()["response"].strip()

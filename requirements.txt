@@ -1,0 +1,19 @@
+# LLM & RAG
+llama-index-core==0.10.68
+llama-index-llms-ollama==0.3.4
+llama-index-embeddings-huggingface==0.3.1
+
+# Vector database (embedded, no server needed)
+lancedb==0.13.0
+
+# Embeddings model
+sentence-transformers==3.1.1
+torch==2.4.1
+transformers==4.44.2
+
+# UI
+streamlit==1.39.0
+
+# Utilities
+rich==13.8.1
+python-dotenv==1.0.1

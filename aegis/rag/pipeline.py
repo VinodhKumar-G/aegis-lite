@@ -180,9 +180,11 @@ def answer(query: str, store: MemoryStore) -> Dict:
     sources = []
 
     for i, chunk in enumerate(vector_results):
-        # Cleaner format — easier for small models to follow
+        import re
+        # Strip the [KIND] prefix that gets added during indexing
+        clean_text = re.sub(r'^\[.*?\]\s*\S+\s*', '', chunk['chunk_text']).strip()
         context_parts.append(
-            f"- {chunk['title']}: {chunk['chunk_text'][:120]}"
+            f"- {chunk['title']}: {clean_text[:150]}"
         )
         sources.append(
             {
@@ -219,22 +221,20 @@ def answer(query: str, store: MemoryStore) -> Dict:
 
     context_text = "\n".join(context_parts)
 
-    prompt = f"""### Instruction:
-You are AEGIS, a private personal AI assistant.
-Rules you must follow:
-- Answer ONLY using the sources provided below.
-- If the answer is not in the sources, respond with exactly: I don't have that information in my memory.
-- Never repeat the sources back to the user.
-- Never make up information.
-- Give a short, direct answer in 2-3 sentences maximum.
+    prompt = f"""<|user|>
+You are a personal memory assistant called AEGIS.
+You must answer using ONLY the notes below.
+If the notes do not contain the answer, respond with:
+"I don't have that in my memory."
+Do not add any other explanation.
+Do not say Sure or Here is your answer.
+Start your response directly with the answer.
 
-### Sources:
+Notes:
 {context_text}
 
-### Question:
-{query}
-
-### Answer:"""
+Question: {query}<|end|>
+<|assistant|>"""
 
     # Step 5: Get answer from local LLM
     llm_answer = ask_llm(prompt)

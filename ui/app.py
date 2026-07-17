@@ -228,11 +228,15 @@ with tab_ask:
             if result["sources"]:
                 st.markdown("#### Sources Retrieved from Your Memory")
                 for i, src in enumerate(result["sources"], 1):
+                    import re
+                    # Strip [KIND] prefix from chunk preview
+                    clean_chunk = re.sub(r'^\[.*?\]\s*', '', src["chunk"])
+
                     st.markdown(
                         f'<div class="source-card">'
                         f'<strong>Source {i}: {src["title"]}</strong> '
                         f'<em>({src["kind"]})</em><br>'
-                        f'{src["chunk"]}'
+                        f'{clean_chunk}'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
